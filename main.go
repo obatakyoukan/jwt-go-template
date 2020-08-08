@@ -7,6 +7,7 @@ import (
 
 	"github.com/subosito/gotenv"
 
+	"./auth"
 	"./controllers"
 	"./driver"
 
@@ -28,7 +29,7 @@ func main() {
 
 	router.HandleFunc("/signup", controller.Signup(db)).Methods("POST")
 	router.HandleFunc("/signup", controller.Login(db)).Methods("POST")
-	router.HandleFunc("/protected", controller.TokenVerifyMiddleWare(controller.ProtectedEndpoint())).Methods("GET")
+	router.Handle("/protected", auth.JwtMiddleware.Handler(controller.ProtectedEndpoint())).Methods("GET")
 
 	log.Println("Listen on port 8000...")
 	log.Fatal(http.ListenAndServe(":8000", router))

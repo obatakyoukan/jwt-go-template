@@ -3,15 +3,11 @@ package controllers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 
 	"../models"
 	"../utils"
-	"github.com/dgrijalva/jwt-go"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -122,41 +118,4 @@ func (c Controller) Login(db *sql.DB) http.HandlerFunc {
 			utils.ResponseWithError(w, http.StatusUnauthorized, error)
 		}
 	}
-}
-
-func (c Controller) TokenVerifyMiddleWare(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var errorObject models.Error
-		authHeader := r.Header.Get("Authorization")
-		bearerToken := strings.Split(authHeader, " ")
-
-		if len(bearerToken) == 2 {
-			authToken := bearerToken[1]
-			token, error := jwt.Parse(authToken, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("There was an error")
-				}
-
-				return []byte(os.Getenv("SECRET")), nil
-			})
-
-			if error != nil {
-				errorObject.Message = error.Error()
-				utils.ResponseWithError(w, http.StatusUnauthorized, errorObject)
-				return
-			}
-
-			if token.Valid {
-				next.ServeHTTP(w, r)
-			} else {
-				errorObject.Message = error.Error()
-				utils.ResponseWithError(w, http.StatusUnauthorized, errorObject)
-				return
-			}
-		} else {
-			errorObject.Message = "Invalid token."
-			utils.ResponseWithError(w, http.StatusUnauthorized, errorObject)
-			return
-		}
-	})
 }
